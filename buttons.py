@@ -25,14 +25,14 @@ class ButtonState:
     return len(self.just_pressed)
 
   def last_pressed_button(self):
-    return self.did_press_button and self.just_pressed[0] or -1 
+    return self.did_press_button and self.just_pressed[0] or -1
 
   def reset_buttons(self):
     self.just_pressed = set()
     self.released = set()
     self.off_buttons = set()
     self.on_buttons = set()
-    
+
 
 class ControllerButtons:
   def __init__(self, midi_h):
@@ -40,34 +40,34 @@ class ControllerButtons:
     self.midi_h = midi_h
     self.save_pending = False
     self.load_pending = False
- 
-  def update(self, state, knob): 
 
-    just_pressed, released, _, _ = state.get_buttons() 
+  def update(self, state, knob):
+
+    just_pressed, released, _, _ = state.get_buttons()
 
     # handle control button presses
     for button in just_pressed:
 
-      # alt_pressed modifier 
+      # alt_pressed modifier
       if CONTROLS[button] == FUNCTION:
         state.alt_pressed = True
 
       # program Change
       if CONTROLS[button] == PROGRAM_CHANGE:
-  
+
         # alt_pressed on program changes moves to next range
         if state.alt_pressed:
           button = button + 4
-        self.set_program(button, state.alt_pressed) 
+        self.set_program(button, state.alt_pressed)
         return None
 
-      # toggle Sequence And Channel 
+      # toggle Sequence And Channel
       if CONTROLS[button] == TOGGLE_CH_SEQ:
         self.active = not self.active
         time.sleep(1)
 
 
-      # select Channel 
+      # select Channel
       if CONTROLS[button] == CH_SEQ_SELECT:
         self.midi_h.channel = button - 3
       # fx controls
@@ -81,15 +81,15 @@ class ControllerButtons:
 
       # active only controls
       if self.active:
-        # play Note 
+        # play Note
         if CONTROLS[button] == NOTE_ON:
             self.midi_h.note_on(button, 0xFF, ch=self.midi_h.channel)
-        # next prev actions 
+        # next prev actions
         if CONTROLS[button] == PREV:
-          # next offset of notes 
+          # next offset of notes
           self.midi_h.prev_offset()
         if CONTROLS[button] == NEXT:
-          # prev offset of notes 
+          # prev offset of notes
           self.midi_h.next_offset()
 
       # assign controls
@@ -97,7 +97,7 @@ class ControllerButtons:
         if self.active:
           state.knob_controller = TRIM_START
         else:
-          state.knob_controller = CHANGE_VOLUME 
+          state.knob_controller = CHANGE_VOLUME
       if CONTROLS[button] == TRIM_END:
         if self.active:
           state.knob_controller = TRIM_END
@@ -105,7 +105,7 @@ class ControllerButtons:
           state.knob_controller = CHANGE_PANNING
 
 
-    # only play notes when in active control mode 
+    # only play notes when in active control mode
     for button in released:
       if CONTROLS[button] == NOTE_ON:
         if self.active:
@@ -115,8 +115,8 @@ class ControllerButtons:
       # only enable alt_pressed when pressed
       if CONTROLS[button] == FUNCTION:
         state.alt_pressed = False
- 
-      # only enable save when 
+
+      # only enable save when
       if button ==  PROGRAM_SAVE_SONG:
          if self.save_pending:
            # button was released without saving pack
@@ -135,17 +135,17 @@ class ControllerButtons:
 
     prog_val = PROGRAM_APP_VALUE[prog]
 
-    if prog == PROGRAM_BROWSE: 
+    if prog == PROGRAM_BROWSE:
       # always using ch=1 for browse prog
       # and deactivate seq
       self.midi_h.channel = 1
       self.midi_h.program_change(prog_val, ch=1)
       self.active = True
     elif prog == PROGRAM_SAVE_SONG:
-      # pending for a combo press 
+      # pending for a combo press
       self.save_pending = True
     elif prog == PROGRAM_LOAD_SONG:
-      # pending for a combo press 
+      # pending for a combo press
       self.load_pending = True
     else:
       self.midi_h.program_change(prog_val)
@@ -175,14 +175,14 @@ class SequencerButtons:
       if grid[i] is not None:
         self.trellis.led[16+ i] = True
       else:
-        self.trellis.led[16 + i] = False 
+        self.trellis.led[16 + i] = False
 
   def get_step(self, i):
     return self.pattern[i + (frame * 16)]
 
   def next_frame(self):
     # increment frame
-    self.frame = self.frame + 1 
+    self.frame = self.frame + 1
 
     # brighten for visual indication
     self.trellis.led.fill(False)
@@ -201,7 +201,7 @@ class SequencerButtons:
     # decrement frame
     self.frame = self.frame - 1
 
-    # dim for visual indication 
+    # dim for visual indication
     self.trellis.led.fill(False)
 
     # cannot be on negative frame
@@ -210,16 +210,16 @@ class SequencerButtons:
 
     # show pattern
     self.show_pattern()
-  
-  def update(self, state, display_channel): 
+
+  def update(self, state, display_channel):
 
     # return if this is the display channel but is not active
     # or not the currently active channel
     if not self.active or (display_channel != self.channel):
       return
 
-    just_pressed, released, off_buttons, _ = state.get_buttons() 
-  
+    just_pressed, released, off_buttons, _ = state.get_buttons()
+
     # update trellis
     for b in just_pressed:
         # TODO: rm with more girds
@@ -237,28 +237,28 @@ class SequencerButtons:
             else:
               self.prev_frame()
 
-          # ignoring other controls so far 
-          continue 
+          # ignoring other controls so far
+          continue
 
         # just let note play when in alt_pressed mode and set as last note
         if state.alt_pressed:
            # NOTE: corresponding note off isn't sent
            note = b + self.last_note_offset
            self.midi_h.note_on(note, 0xFF, ch=self.channel)
-           self.last_note = NoteOn(note) 
+           self.last_note = NoteOn(note)
         else:
           # light up buttons not in off set
-          self.trellis.led[b] = b not in off_buttons 
+          self.trellis.led[b] = b not in off_buttons
           last_chan_note = self.midi_h.channel == self.channel and self.last_note or None
           self.pattern[b + (self.frame * GRID_SIZE)  - GRID_SIZE] = self.trellis.led[b] and last_chan_note or None
 
     # symmetric different update will remove the off_buttons
-    # that are already in the list of on_buttons while also 
+    # that are already in the list of on_buttons while also
     # adding the new just_pressed buttons to the list
     just_pressed.extend(state.off_buttons)
     state.on_buttons.symmetric_difference_update(just_pressed)
 
-  # play grid step based on pattern 
+  # play grid step based on pattern
   async def play_step(self, i):
 
     if not self.active:
@@ -278,7 +278,7 @@ class SequencerButtons:
     if msg is not None:
         self.midi_h.note_on(msg[1], 0xFF, ch=self.channel)
 
-  async def led_step(self, i, display_channel): 
+  async def led_step(self, i, display_channel):
     if not self.active:
       return
 
@@ -286,16 +286,16 @@ class SequencerButtons:
     # when display channel is same as seq chan then blink
     if display_channel != self.channel:
       return
-    # step is offset to reference second grid 
+    # step is offset to reference second grid
     step = i % GRID_SIZE + GRID_SIZE
     # illuminate current led in step
-    n_steps = len(self.pattern) 
+    n_steps = len(self.pattern)
     if self.pattern[i % n_steps] is None:
       self.trellis.led[step] = True
-    last_step = step - 1 
+    last_step = step - 1
     # Wrap around if last step referred to 1st grid
     if last_step < GRID_SIZE:
-      last_step = 2*GRID_SIZE - 1 
+      last_step = 2*GRID_SIZE - 1
 
     # deactivate last if not part of pattern
     if self.pattern[last_step + (self.frame * GRID_SIZE) - GRID_SIZE] is None:

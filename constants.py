@@ -1,7 +1,7 @@
 from rtmidi.midiconstants import *
 
 
-# program values according to position on grid 
+# program values according to position on grid
 PROGRAM_BROWSE = 0
 PROGRAM_ASSIGN = 5
 
@@ -13,9 +13,9 @@ PROGRAM_SAVE_SLICES = 6
 PROGRAM_LOAD_SONG = 3
 PROGRAM_LOAD_SLICES = 7
 
-# map of program values according to chopogy 
+# map of program values according to chopogy
 PROGRAM_APP_VALUE = [0] * 8
-PROGRAM_APP_VALUE[PROGRAM_BROWSE] = 1 
+PROGRAM_APP_VALUE[PROGRAM_BROWSE] = 1
 PROGRAM_APP_VALUE[PROGRAM_EDIT] = 2
 PROGRAM_APP_VALUE[PROGRAM_ASSIGN] = 3
 PROGRAM_APP_VALUE[PROGRAM_LOAD_SLICES] = 4
@@ -24,7 +24,7 @@ PROGRAM_APP_VALUE[PROGRAM_SAVE_SONG] = 6
 PROGRAM_APP_VALUE[PROGRAM_LOAD_SONG] = 9
 
 
-# Operational Codes 
+# Operational Codes
 FUNCTION = 0xC1
 TOGGLE_CH_SEQ = 0xC2
 PREV = 0xC3
@@ -43,7 +43,7 @@ CHANGE_PANNING = 0x49
 
 
 
-GRID_SIZE = 16 
+GRID_SIZE = 16
 
 CTL_CLOCK_SPEED = 1200 # 0.05 sec
 
@@ -58,5 +58,5 @@ CONTROLS = [PROGRAM_CHANGE, PROGRAM_CHANGE, PROGRAM_CHANGE, PROGRAM_CHANGE,
 						NOTE_ON, NOTE_ON, NOTE_ON, NOTE_ON]
 
 
-  
+
 

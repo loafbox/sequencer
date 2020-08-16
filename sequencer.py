@@ -1,6 +1,6 @@
 import time
 import sys
-import queue 
+import queue
 import board
 import busio
 import asyncio
@@ -9,7 +9,7 @@ from RPi import GPIO
 
 import song
 from metronome import Metronome
-from midi_handler import MidiHandler  
+from midi_handler import MidiHandler
 from buttons import *
 from knob import Knob
 
@@ -32,7 +32,7 @@ ctlButtons = ControllerButtons(midi_h)
 state = ButtonState()
 knob = Knob()
 
-# button reconciler 
+# button reconciler
 async def button_handler(clock):
 
   # add some button chill so we don't spam notes
@@ -59,19 +59,19 @@ async def button_handler(clock):
     return
 
   # always check ctl buttons
-  curr_ctl_active = ctlButtons.active 
+  curr_ctl_active = ctlButtons.active
   ctlButtons.update(state, knob)
 
   # check sequencer note added if ctl notes disabled
   for _, seq in clock.sequencers.items():
     seq.active = not curr_ctl_active
     seq.update(state, clock.display_channel)
- 
+
   # detect mode change
   if curr_ctl_active != ctlButtons.active:
     state.reset_buttons()
 
-    # control and note mode 
+    # control and note mode
     if ctlButtons.active:
       # clear leds
       trellis.led.fill(False)
@@ -83,14 +83,14 @@ async def button_handler(clock):
         clock.sequencers[chan] = seq
         clock.display_channel = chan
       else:
-        clock.sequencers[chan].show_pattern() 
+        clock.sequencers[chan].show_pattern()
 
   # detect chan change
   if clock.display_channel != midi_h.channel:
     if midi_h.channel in clock.sequencers:
       clock.display_channel = midi_h.channel
       state.reset_buttons()
-      clock.sequencers[midi_h.channel].show_pattern() 
+      clock.sequencers[midi_h.channel].show_pattern()
 
 async def knob_handler(clock):
 
@@ -102,8 +102,8 @@ async def knob_handler(clock):
 
 cbs = [button_handler, knob_handler]
 
-# knob interrupt handler 
-  
+# knob interrupt handler
+
 # set tempo to 160 beats-per-minute
 tempo = 320
 
