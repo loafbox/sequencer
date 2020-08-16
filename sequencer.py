@@ -49,11 +49,13 @@ async def button_handler(clock):
   # are in song_pending then save song
   if ctlButtons.save_pending and state.did_press_button():
     song.save(midi_h, clock.sequencers, state.last_pressed_button())
+    ctlButtons.save_pending = False
     return
 
   # restore sequencers on load
   if ctlButtons.load_pending and state.did_press_button():
     clock.sequencers = song.load(midi_h, trellis, state.last_pressed_button())
+    ctlButtons.load_pending = False
     return
 
   # always check ctl buttons

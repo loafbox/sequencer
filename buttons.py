@@ -92,11 +92,17 @@ class ControllerButtons:
           # prev offset of notes 
           self.midi_h.next_offset()
 
-        # assign controls
-        if CONTROLS[button] == TRIM_START:
-          state.knob_controller = TRIM_START 
-        if CONTROLS[button] == TRIM_END:
+      # assign controls
+      if CONTROLS[button] == TRIM_START:
+        if self.active:
+          state.knob_controller = TRIM_START
+        else:
+          state.knob_controller = CHANGE_VOLUME 
+      if CONTROLS[button] == TRIM_END:
+        if self.active:
           state.knob_controller = TRIM_END
+        else:
+          state.knob_controller = CHANGE_PANNING
 
 
     # only play notes when in active control mode 
@@ -112,9 +118,15 @@ class ControllerButtons:
  
       # only enable save when 
       if button ==  PROGRAM_SAVE_SONG:
+         if self.save_pending:
+           # button was released without saving pack
+           self.set_program(PROGRAM_SAVE_SLICES, state.alt_pressed)
          self.save_pending = False
       if button ==  PROGRAM_LOAD_SONG:
-        self.load_pending = False       
+         if self.load_pending:
+           # button was released without saving pack
+           self.set_program(PROGRAM_LOAD_SLICES, state.alt_pressed)
+         self.load_pending = False
 
   def channel(self):
     return self.midi_h.channel
