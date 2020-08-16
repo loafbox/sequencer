@@ -10,7 +10,7 @@ class ButtonState:
     self.released = set()
     self.off_buttons = set()
     self.on_buttons = set()
-    self.function = False
+    self.alt_pressed = False
 
   def set_buttons(self, trellis):
     self.just_pressed, self.released = trellis.read_buttons()
@@ -19,6 +19,12 @@ class ButtonState:
 
   def get_buttons(self):
     return self.just_pressed, self.released, self.off_buttons, self.on_buttons
+
+  def did_press_button(self):
+    return len(self.just_pressed)
+
+  def last_pressed_button(self):
+    return self.did_press_button and self.just_pressed[0] or -1 
 
   def reset_buttons(self):
     self.just_pressed = set()
@@ -31,7 +37,8 @@ class ControllerButtons:
   def __init__(self, midi_h):
     self.active = True
     self.midi_h = midi_h
-    self.midi_h = midi_h
+    self.save_pending = False
+    self.load_pending = False
  
   def update(self, state, knob): 
 
@@ -40,22 +47,18 @@ class ControllerButtons:
     # handle control button presses
     for button in just_pressed:
 
-      # function modifier 
+      # alt_pressed modifier 
       if CONTROLS[button] == FUNCTION:
-        state.function = True
+        state.alt_pressed = True
 
       # program Change
       if CONTROLS[button] == PROGRAM_CHANGE:
-        # always using ch=1 for browse prog
-        # and deactivate seq
-        prog = button + 1
-        if prog == 1: 
-          self.midi_h.channel = 1
-          self.midi_h.program_change(prog, ch=1)
-          self.active = True
-        else:
-          self.midi_h.program_change(prog, ch=self.midi_h.channel)
-        self.midi_h.reset_offset()
+  
+        # alt_pressed on program changes moves to next range
+        if state.alt_pressed:
+          button = button + 4
+        self.set_program(button, state.alt_pressed) 
+        return None
 
       # toggle Sequence And Channel 
       if CONTROLS[button] == TOGGLE_CH_SEQ:
@@ -65,7 +68,7 @@ class ControllerButtons:
 
       # select Channel 
       if CONTROLS[button] == CH_SEQ_SELECT:
-        self.midi_h.channel = button - 7
+        self.midi_h.channel = button - 3
 
       # active only controls
       if self.active:
@@ -81,17 +84,45 @@ class ControllerButtons:
           self.midi_h.next_offset()
 
 
-
     # only play notes when in active control mode 
     for button in released:
       if CONTROLS[button] == NOTE_ON:
         if self.active:
-          self.midi_h.note_off(button, 0, ch=self.midi_h.channel)
+            # send regular note off action
+            self.midi_h.note_off(button, 0, ch=self.midi_h.channel)
+
+      # only enable alt_pressed when pressed
       if CONTROLS[button] == FUNCTION:
-        state.function = False 
+        state.alt_pressed = False
+ 
+      # only enable save when 
+      if button ==  PROGRAM_SAVE_SONG:
+         self.save_pending = False
+      if button ==  PROGRAM_LOAD_SONG:
+        self.load_pending = False       
 
   def channel(self):
     return self.midi_h.channel
+
+  def set_program(self, prog, alt_pressed):
+
+    prog_val = PROGRAM_APP_VALUE[prog]
+
+    if prog == PROGRAM_BROWSE: 
+      # always using ch=1 for browse prog
+      # and deactivate seq
+      self.midi_h.channel = 1
+      self.midi_h.program_change(prog_val, ch=1)
+      self.active = True
+    elif prog == PROGRAM_SAVE_SONG:
+      # pending for a combo press 
+      self.save_pending = True
+    elif prog == PROGRAM_LOAD_SONG:
+      # pending for a combo press 
+      self.load_pending = True
+    else:
+      self.midi_h.program_change(prog_val)
+    self.midi_h.reset_offset()
 
 class SequencerButtons:
   def __init__(self, trellis, midi_h, channel):
@@ -169,12 +200,12 @@ class SequencerButtons:
         if b < 16:
           # pressing prev/next on sequencer moves the pattern gird
           if CONTROLS[b] == NEXT:
-            if state.function:
+            if state.alt_pressed:
               self.last_note_offset = self.last_note_offset + GRID_SIZE
             else:
               self.next_frame()
           if CONTROLS[b] == PREV:
-            if state.function:
+            if state.alt_pressed:
               self.last_note_offset = self.last_note_offset - GRID_SIZE
             else:
               self.prev_frame()
@@ -182,8 +213,8 @@ class SequencerButtons:
           # ignoring other controls so far 
           continue 
 
-        # just let note play when in function mode and set as last note
-        if state.function:
+        # just let note play when in alt_pressed mode and set as last note
+        if state.alt_pressed:
            # NOTE: corresponding note off isn't sent
            note = b + self.last_note_offset
            self.midi_h.note_on(note, 0xFF, ch=self.channel)

@@ -5,11 +5,13 @@ import board
 import busio
 import asyncio
 from adafruit_trellis import Trellis
+from RPi import GPIO
+
+import song
 from metronome import Metronome
 from midi_handler import MidiHandler  
 from buttons import *
 from knob import Knob
-from RPi import GPIO
 
 # setup midi
 midi_h = MidiHandler(ch=1)
@@ -30,7 +32,6 @@ ctlButtons = ControllerButtons(midi_h)
 state = ButtonState()
 knob = Knob()
 
- 
 # button reconciler 
 async def button_handler(clock):
 
@@ -43,6 +44,17 @@ async def button_handler(clock):
 
   # get button state
   state.set_buttons(trellis)
+
+  # if button was just pressed and we
+  # are in song_pending then save song
+  if ctlButtons.save_pending and state.did_press_button():
+    song.save(midi_h, clock.sequencers, state.last_pressed_button())
+    return
+
+  # restore sequencers on load
+  if ctlButtons.load_pending and state.did_press_button():
+    clock.sequencers = song.load(midi_h, trellis, state.last_pressed_button())
+    return
 
   # always check ctl buttons
   curr_ctl_active = ctlButtons.active 
