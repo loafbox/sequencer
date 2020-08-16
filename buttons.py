@@ -11,6 +11,7 @@ class ButtonState:
     self.off_buttons = set()
     self.on_buttons = set()
     self.alt_pressed = False
+    self.knob_controller = CHANGE_RATE
 
   def set_buttons(self, trellis):
     self.just_pressed, self.released = trellis.read_buttons()
@@ -69,6 +70,14 @@ class ControllerButtons:
       # select Channel 
       if CONTROLS[button] == CH_SEQ_SELECT:
         self.midi_h.channel = button - 3
+      # fx controls
+      if CONTROLS[button] == CHANGE_RATE:
+        state.knob_controller = CHANGE_RATE
+      if CONTROLS[button] == CHANGE_TEMPO_PITCH:
+        if state.alt_pressed:
+           state.knob_controller = CHANGE_TEMPO
+        else:
+           state.knob_controller = CHANGE_PITCH
 
       # active only controls
       if self.active:
@@ -82,6 +91,12 @@ class ControllerButtons:
         if CONTROLS[button] == NEXT:
           # prev offset of notes 
           self.midi_h.next_offset()
+
+        # assign controls
+        if CONTROLS[button] == TRIM_START:
+          state.knob_controller = TRIM_START 
+        if CONTROLS[button] == TRIM_END:
+          state.knob_controller = TRIM_END
 
 
     # only play notes when in active control mode 

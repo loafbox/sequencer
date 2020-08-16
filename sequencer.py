@@ -95,7 +95,7 @@ async def knob_handler(clock):
   # apply knob position to chan
   knob_ctl_val = knob.get_knob_value()
   if knob_ctl_val is not None:
-    midi_h.controller_change(0x72, knob_ctl_val)
+    midi_h.controller_change(state.knob_controller, knob_ctl_val)
 
 
 cbs = [button_handler, knob_handler]
