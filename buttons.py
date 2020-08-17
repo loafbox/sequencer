@@ -66,9 +66,11 @@ class ControllerButtons:
         self.active = not self.active
         time.sleep(1)
 
-
       # select Channel
       if CONTROLS[button] == CH_SEQ_SELECT:
+        # alt_pressed on channel changes moves to next range
+        if state.alt_pressed:
+          button = button + 3
         self.midi_h.channel = button - 3
       # fx controls
       if CONTROLS[button] == CHANGE_RATE:
