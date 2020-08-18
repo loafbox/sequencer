@@ -40,6 +40,7 @@ class ControllerButtons:
     self.midi_h = midi_h
     self.save_pending = False
     self.load_pending = False
+    self.rec_pending = False
 
   def update(self, state, knob):
 
@@ -118,12 +119,14 @@ class ControllerButtons:
       if CONTROLS[button] == FUNCTION:
         state.alt_pressed = False
 
-      # only enable save when
-      if button ==  PROGRAM_SAVE_SONG:
+      # only enable save when pending
+      if button == PROGRAM_SAVE_SONG:
          if self.save_pending:
            # button was released without saving pack
+           # so must be pack save
            self.set_program(PROGRAM_SAVE_SLICES, state.alt_pressed)
          self.save_pending = False
+         self.rec_pending = False
       if button ==  PROGRAM_LOAD_SONG:
          if self.load_pending:
            # button was released without saving pack
@@ -144,11 +147,16 @@ class ControllerButtons:
       self.midi_h.program_change(prog_val, ch=1)
       self.active = True
     elif prog == PROGRAM_SAVE_SONG:
-      # pending for a combo press
+      # pending for a combo press of save
       self.save_pending = True
+    elif prog == PROGRAM_RECORD_START and alt_pressed:
+      # pending for a combo press of record
+      self.rec_pending = True
     elif prog == PROGRAM_LOAD_SONG:
       # pending for a combo press
       self.load_pending = True
+    elif alt_pressed and prog == PROGRAM_RECORD_STOP:
+      self.midi_h.program_change(PROGRAM_RECORD_STOP_APP_VALUE)
     else:
       self.midi_h.program_change(prog_val)
     self.midi_h.reset_offset()

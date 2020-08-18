@@ -58,6 +58,12 @@ async def button_handler(clock):
     ctlButtons.load_pending = False
     return
 
+  # start recording
+  if ctlButtons.rec_pending and state.did_press_button():
+    song.record(midi_h, state.last_pressed_button())
+    ctlButtons.rec_pending = False
+    return
+
   # always check ctl buttons
   curr_ctl_active = ctlButtons.active
   ctlButtons.update(state, knob)

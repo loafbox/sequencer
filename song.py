@@ -8,7 +8,7 @@ class Song:
 
   @staticmethod
   def name(num, version):
-    return "/home/pi/src/sequencer/songs/chopogy-%d-v%d" % (num, version)
+    return "/home/pi/src/sequencer/songs/%d/session-v%d" % (num, version)
 
 def save(midi_h, sequencers, song_num):
 
@@ -50,3 +50,6 @@ def load(midi_h, trellis, song_num):
     print("Loaded Sequencer: ", channel, pattern)
 
   return sequencers
+
+def record(midi_h, song_id):
+  midi_h.controller_change(PROGRAM_RECORD_START_APP_VALUE, song_id)
